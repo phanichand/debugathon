@@ -1,0 +1,27 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/operatordb
+    username: debugathon
+    password: debugathon
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+admin:
+  token: local-dev-admin-token-change-me
+
+operator:
+  deterministic-timeout-delay-ms: 3000

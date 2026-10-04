@@ -1,0 +1,6 @@
+rootProject.name = 'problem1'
+
+include 'services:booking-api'
+include 'services:booking-orchestrator'
+include 'services:payment-simulator'
+include 'services:operator-simulator'

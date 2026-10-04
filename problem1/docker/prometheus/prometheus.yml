@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: booking-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["booking-api:8080"]
+
+  - job_name: booking-orchestrator
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["booking-orchestrator:8081"]
+
+  - job_name: payment-simulator
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["payment-simulator:8082"]
+
+  - job_name: operator-simulator
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["operator-simulator:8083"]
