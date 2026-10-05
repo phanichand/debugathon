@@ -32,7 +32,7 @@ From that point onward, use the instructions inside that problem.
 | [Problem 2](problem2/) | Authentication failures after scale-out | Python / FastAPI | Available |
 | [Problem 3](problem3/) | The One Bad Pod | Python / FastAPI | Available |
 | Problem 4 | Production incident simulation | TBD | Planned |
-| Problem 5 | Production incident simulation | TBD | Planned |
+| [Problem 5](problem5/) | The Price That Came Back From the Dead | Java / Spring Boot | Available |
 
 ## Participant Model
 

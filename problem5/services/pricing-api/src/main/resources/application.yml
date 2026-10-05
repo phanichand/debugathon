@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200
+spring:
+  application:
+    name: pricing-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5545/pricing}
+    username: ${DB_USER:pricing}
+    password: ${DB_PASSWORD:pricing}
+    hikari:
+      maximum-pool-size: 12
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6395}
+      timeout: 2s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+pricing:
+  instance: ${INSTANCE_ID:pricing-a}
+  local-ttl: ${LOCAL_TTL:6s}
+  redis-ttl: ${REDIS_TTL:8s}
+  quote-workers: ${QUOTE_WORKERS:2}
