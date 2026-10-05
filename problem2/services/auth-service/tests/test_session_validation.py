@@ -1,5 +1,5 @@
-from app.local_session_store import LocalSessionStore
 from app.replication import ReplicationBuffer
+from app.session_index import SessionIndex
 from app.session_validation import SessionRegistry, SessionValidator
 
 
@@ -8,12 +8,12 @@ class AlwaysRegistryPolicy:
         return True
 
 
-def test_registered_session_is_valid_on_same_replica():
-    store = LocalSessionStore()
+def test_registered_session_is_valid_in_same_index():
+    index = SessionIndex()
     buffer = ReplicationBuffer()
     policy = AlwaysRegistryPolicy()
-    registry = SessionRegistry(store, buffer, policy)
-    validator = SessionValidator(store, policy)
+    registry = SessionRegistry(index, buffer, policy)
+    validator = SessionValidator(index, policy)
 
     registry.register("session-1", "nonce-1")
 
@@ -21,11 +21,11 @@ def test_registered_session_is_valid_on_same_replica():
 
 
 def test_wrong_nonce_is_rejected():
-    store = LocalSessionStore()
+    index = SessionIndex()
     buffer = ReplicationBuffer()
     policy = AlwaysRegistryPolicy()
-    registry = SessionRegistry(store, buffer, policy)
-    validator = SessionValidator(store, policy)
+    registry = SessionRegistry(index, buffer, policy)
+    validator = SessionValidator(index, policy)
 
     registry.register("session-1", "nonce-1")
 

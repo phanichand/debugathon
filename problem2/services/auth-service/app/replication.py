@@ -1,7 +1,7 @@
 import asyncio
 from collections import deque
 
-from .local_session_store import LocalSessionStore
+from .session_index import SessionIndex
 from .shared_session_repository import SharedSessionRepository
 
 
@@ -21,13 +21,13 @@ class ReplicationBuffer:
 class SessionReplicator:
     def __init__(
         self,
-        local_store: LocalSessionStore,
+        session_index: SessionIndex,
         shared_repository: SharedSessionRepository,
         buffer: ReplicationBuffer,
         flush_ms: int,
         hydration_interval_ms: int,
     ) -> None:
-        self._local_store = local_store
+        self._session_index = session_index
         self._shared_repository = shared_repository
         self._buffer = buffer
         self._flush_seconds = flush_ms / 1000
@@ -59,4 +59,4 @@ class SessionReplicator:
         while True:
             await asyncio.sleep(self._hydration_seconds)
             for session_id, nonce in await self._shared_repository.recent():
-                self._local_store.put(session_id, nonce)
+                self._session_index.put(session_id, nonce)

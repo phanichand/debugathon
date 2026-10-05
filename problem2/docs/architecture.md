@@ -21,8 +21,8 @@ auth-a      auth-b       auth-c
 The gateway distributes requests across three identical Python/FastAPI auth
 service replicas.
 
-Each auth replica performs JWT verification and participates in a shared session
-replication mechanism backed by Redis.
+Each auth replica performs JWT verification and participates in the session
+validation subsystem, which also uses Redis.
 
 ## Public API
 
@@ -56,11 +56,12 @@ Nginx load-balances requests across the auth replicas.
 
 ### auth replicas
 
-All replicas run the same code and configuration other than their pod name.
+All replicas run the same Python application and configuration other than their
+replica name.
 
 ### Redis
 
-Shared infrastructure used by the auth service's session replication layer.
+Shared infrastructure used by the authentication system.
 
 ### Prometheus / Grafana
 

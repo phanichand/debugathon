@@ -11,10 +11,10 @@ from redis.asyncio import Redis
 
 from .config import Settings
 from .jwt_service import JwtService
-from .local_session_store import LocalSessionStore
 from .metrics import LOGIN_TOTAL, LOCAL_REGISTRY_SIZE, VALIDATION_TOTAL
 from .models import LoginRequest, LoginResponse, UserResponse
 from .replication import ReplicationBuffer, SessionReplicator
+from .session_index import SessionIndex
 from .session_validation import RegistryPolicy, SessionRegistry, SessionValidator
 from .shared_session_repository import SharedSessionRepository
 
@@ -22,16 +22,16 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("auth-service")
 
 settings = Settings.from_env()
-local_store = LocalSessionStore()
+session_index = SessionIndex()
 replication_buffer = ReplicationBuffer()
 policy = RegistryPolicy(settings.registry_rollout_percent)
-registry = SessionRegistry(local_store, replication_buffer, policy)
-validator = SessionValidator(local_store, policy)
+registry = SessionRegistry(session_index, replication_buffer, policy)
+validator = SessionValidator(session_index, policy)
 jwt_service = JwtService(settings.jwt_secret, settings.jwt_ttl_seconds)
 redis_client = Redis.from_url(settings.redis_url)
 shared_repository = SharedSessionRepository(redis_client, settings.session_ttl_seconds)
 replicator = SessionReplicator(
-    local_store,
+    session_index,
     shared_repository,
     replication_buffer,
     settings.replication_flush_ms,
@@ -61,7 +61,7 @@ app.mount("/metrics", make_asgi_app())
 async def add_pod_header(request: Request, call_next):
     response: Response = await call_next(request)
     response.headers["X-Auth-Pod"] = settings.pod_name
-    LOCAL_REGISTRY_SIZE.labels(settings.pod_name).set(local_store.size())
+    LOCAL_REGISTRY_SIZE.labels(settings.pod_name).set(session_index.size())
     return response
 
 

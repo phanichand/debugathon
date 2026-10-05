@@ -1,7 +1,7 @@
 from threading import RLock
 
 
-class LocalSessionStore:
+class SessionIndex:
     def __init__(self) -> None:
         self._values: dict[str, str] = {}
         self._lock = RLock()

@@ -1,7 +1,7 @@
 import hashlib
 
-from .local_session_store import LocalSessionStore
 from .replication import ReplicationBuffer
+from .session_index import SessionIndex
 
 
 class RegistryPolicy:
@@ -17,27 +17,27 @@ class RegistryPolicy:
 class SessionRegistry:
     def __init__(
         self,
-        local_store: LocalSessionStore,
+        session_index: SessionIndex,
         replication_buffer: ReplicationBuffer,
         policy: RegistryPolicy,
     ) -> None:
-        self._local_store = local_store
+        self._session_index = session_index
         self._replication_buffer = replication_buffer
         self._policy = policy
 
     def register(self, session_id: str, nonce: str) -> None:
         if not self._policy.requires_registry(session_id):
             return
-        self._local_store.put(session_id, nonce)
+        self._session_index.put(session_id, nonce)
         self._replication_buffer.stage(session_id, nonce)
 
 
 class SessionValidator:
-    def __init__(self, local_store: LocalSessionStore, policy: RegistryPolicy) -> None:
-        self._local_store = local_store
+    def __init__(self, session_index: SessionIndex, policy: RegistryPolicy) -> None:
+        self._session_index = session_index
         self._policy = policy
 
     def valid(self, session_id: str, nonce: str) -> bool:
         if not self._policy.requires_registry(session_id):
             return True
-        return self._local_store.matches(session_id, nonce)
+        return self._session_index.matches(session_id, nonce)
