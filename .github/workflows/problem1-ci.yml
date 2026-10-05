@@ -20,10 +20,14 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      - name: Prepare database for application health tests
+        run: docker compose -f docker/docker-compose.yml up -d --wait --wait-timeout 120 postgres
       - name: Application tests
         run: ./gradlew --no-daemon test
       - name: Validate Compose
         run: docker compose -f docker/docker-compose.yml config --quiet
+      - name: Clear test database before participant rehearsal
+        run: docker compose -f docker/docker-compose.yml down -v
       - name: Start environment
         run: docker compose -f docker/docker-compose.yml up -d --build
       - name: Normal operation smoke
