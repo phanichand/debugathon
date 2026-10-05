@@ -1,0 +1,6 @@
+{
+  "id": "availability-budget",
+  "priority": 10,
+  "selector": {"workload": "availability"},
+  "settings": {"DOWNSTREAM_TIMEOUT_MS": 2000}
+}

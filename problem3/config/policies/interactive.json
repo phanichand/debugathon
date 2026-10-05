@@ -1,0 +1,6 @@
+{
+  "id": "interactive-budget",
+  "priority": 40,
+  "selector": {"workload": "suggestions"},
+  "settings": {"DOWNSTREAM_TIMEOUT_MS": 250, "MAX_RESULTS": 8}
+}
