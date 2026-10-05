@@ -80,6 +80,7 @@ services:
       - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/operatordb
+      OPERATOR_INITIAL_PROFILE: DEGRADED
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
       interval: 5s

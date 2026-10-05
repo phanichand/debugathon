@@ -25,3 +25,4 @@ admin:
 
 operator:
   deterministic-timeout-delay-ms: 3000
+  initial-profile: NORMAL

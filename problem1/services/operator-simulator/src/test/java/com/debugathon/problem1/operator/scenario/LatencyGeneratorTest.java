@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LatencyGeneratorTest {
 
-    private final ScenarioService scenarioService = new ScenarioService();
+    private final ScenarioService scenarioService = new ScenarioService(LatencyProfile.NORMAL);
     private final LatencyGenerator latencyGenerator = new LatencyGenerator(scenarioService, 3000L);
 
     @Test
