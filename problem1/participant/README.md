@@ -42,8 +42,30 @@ Read the incident brief first: [`incident-brief.md`](./incident-brief.md)
    on its own port, and ships structured JSON logs that are queryable from
    Grafana's Explore view (Loki datasource).
 
+6. Generate traffic to see the system under load (it hits only the public
+   booking API, nothing else):
+
+   ```bash
+   ./scripts/generate-traffic.sh              # 200 bookings by default
+   COUNT=500 ./scripts/generate-traffic.sh    # or a different amount
+   ```
+
+   A single booking succeeds the vast majority of the time — you may need
+   a few hundred before you see a failure. That's expected, not a bug in
+   the script.
+
 See [`../docs/architecture.md`](../docs/architecture.md) for how the
 services fit together.
+
+### If `docker compose` doesn't work on your machine
+
+Some setups only have the older standalone `docker-compose` (with a
+hyphen) rather than the `docker compose` plugin. If so:
+
+- Substitute `docker-compose` for `docker compose` in any command above.
+- Use [`../scripts/smoke-test-docker-compose-v1.sh`](../scripts/smoke-test-docker-compose-v1.sh)
+  instead of `scripts/smoke-test.sh` — it's identical except for that one
+  difference.
 
 ## Allowed Tools
 
