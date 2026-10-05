@@ -1,0 +1,64 @@
+name: Problem 4 CI
+on:
+  push:
+    paths: ["problem4/**", ".github/workflows/problem4-ci.yml"]
+  pull_request:
+    paths: ["problem4/**", ".github/workflows/problem4-ci.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: problem4
+    env:
+      RECEIPT_TIMEOUT_RATE: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Unit tests
+        run: ./gradlew --no-daemon test
+      - name: Validate Compose
+        run: docker compose -f docker/docker-compose.yml config --quiet
+      - name: Start real Kafka stack
+        run: docker compose -f docker/docker-compose.yml up -d --build
+      - name: Health checks
+        run: ./scripts/smoke-test.sh
+      - name: Verify ordinary processing and incident symptoms
+        run: python3 scripts/verify.py
+      - name: Normal workload calibration
+        run: |
+          ./scripts/generate-traffic.sh > evidence/normal-workload.log
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          reports=list(Path('evidence').glob('traffic-*-reconciliation.json'))
+          assert len(reports)==1, reports
+          r=json.loads(reports[0].read_text())
+          summary={'expected':r['expected'],'missing':len(r['missing']),'duplicateEvents':len(r['duplicates']),'missingPercent':100*len(r['missing'])/max(1,r['expected'])}
+          Path('evidence/normal-summary.json').write_text(json.dumps(summary,indent=2))
+          print(summary)
+          assert r['expected']==36000, summary
+          assert len(r['missing'])>0 and len(r['duplicates'])>0, summary
+          PYTHON
+      - name: Capture logs
+        if: always()
+        run: |
+          mkdir -p evidence
+          docker compose -f docker/docker-compose.yml logs --no-color > evidence/final-compose.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: problem4-public-evidence
+          path: |
+            problem4/evidence/
+            problem4/build/reports/tests/
+      - name: Stop stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yml --profile scale down -v

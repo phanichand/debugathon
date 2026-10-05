@@ -1,0 +1,108 @@
+name: debugathon-problem4
+x-app: &app
+  build:
+    context: ..
+  image: debugathon-problem4:local
+  init: true
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+  environment: &env
+    DB_URL: jdbc:postgresql://postgres:5432/settlements
+    KAFKA_BOOTSTRAP: kafka:9092
+    RECEIPT_TIMEOUT_RATE: ${RECEIPT_TIMEOUT_RATE:-0.0005}
+  stop_grace_period: 15s
+services:
+  kafka-storage-init:
+    image: apache/kafka:3.9.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R 1000:1000 /var/lib/kafka/data"]
+    volumes: ["kafka-data:/var/lib/kafka/data"]
+  kafka:
+    image: apache/kafka:3.9.0
+    depends_on:
+      kafka-storage-init:
+        condition: service_completed_successfully
+    ports: ["127.0.0.1:19094:19094"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:19094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes: ["kafka-data:/var/lib/kafka/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+  kafka-init:
+    image: apache/kafka:3.9.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/opt/kafka/bin/kafka-topics.sh"]
+    command: ["--bootstrap-server", "kafka:9092", "--create", "--if-not-exists", "--topic", "booking-events", "--partitions", "3", "--replication-factor", "1"]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: settlements
+      POSTGRES_USER: settlement
+      POSTGRES_PASSWORD: settlement
+    ports: ["127.0.0.1:5444:5432"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U settlement -d settlements"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  producer:
+    <<: *app
+    environment:
+      <<: *env
+      ROLE: producer
+    ports: ["127.0.0.1:8084:8080"]
+  consumer:
+    <<: *app
+    environment:
+      <<: *env
+      ROLE: consumer
+      CHECKPOINT_MS: ${CHECKPOINT_MS:-1000}
+    ports: ["127.0.0.1:8085:8080"]
+  consumer-b:
+    <<: *app
+    profiles: ["scale"]
+    environment:
+      <<: *env
+      ROLE: consumer
+      CHECKPOINT_MS: ${CHECKPOINT_MS:-1000}
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["127.0.0.1:9094:9090"]
+  grafana:
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3004:3000"]
+volumes:
+  postgres-data:
+  kafka-data:

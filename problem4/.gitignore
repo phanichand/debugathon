@@ -1,0 +1,6 @@
+.gradle/
+**/build/
+evidence/
+.env
+__pycache__/
+*.pyc

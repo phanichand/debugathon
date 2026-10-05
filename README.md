@@ -31,7 +31,7 @@ From that point onward, use the instructions inside that problem.
 | [Problem 1](problem1/) | Booking conversion degradation | Java / Spring Boot | Available |
 | [Problem 2](problem2/) | Authentication failures after scale-out | Python / FastAPI | Available |
 | [Problem 3](problem3/) | The One Bad Pod | Python / FastAPI | Available |
-| Problem 4 | Production incident simulation | TBD | Planned |
+| [Problem 4](problem4/) | Settlement processing discrepancies | Java / Spring Boot / Kafka | Available |
 | [Problem 5](problem5/) | The Price That Came Back From the Dead | Java / Spring Boot | Available |
 
 ## Participant Model

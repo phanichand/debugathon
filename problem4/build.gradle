@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+group = 'com.debugathon.problem4'
+version = '1.0.0'
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+repositories { mavenCentral() }
+sourceSets {
+    main { java.srcDirs = ['services/src/main/java']; resources.srcDirs = ['services/src/main/resources'] }
+    test { java.srcDirs = ['services/src/test/java'] }
+}
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'org.apache.kafka:kafka-clients'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+tasks.named('test') { useJUnitPlatform() }
+tasks.named('bootJar') { archiveFileName = 'platform.jar' }
