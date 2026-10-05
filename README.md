@@ -22,17 +22,17 @@ For example:
 cd problem1
 ```
 
-From that point onward, use the instructions in `problem1/README.md`.
+From that point onward, use the instructions inside that problem.
 
 ## Problems
 
-| Problem | Incident | Status |
-|---|---|---|
-| [Problem 1](problem1/) | Booking conversion degradation | Available |
-| Problem 2 | Production incident simulation | Planned |
-| Problem 3 | Production incident simulation | Planned |
-| Problem 4 | Production incident simulation | Planned |
-| Problem 5 | Production incident simulation | Planned |
+| Problem | Incident | Stack | Status |
+|---|---|---|---|
+| [Problem 1](problem1/) | Booking conversion degradation | Java / Spring Boot | Available |
+| [Problem 2](problem2/) | Authentication failures after scale-out | Python / FastAPI | Available |
+| Problem 3 | Production incident simulation | TBD | Planned |
+| Problem 4 | Production incident simulation | TBD | Planned |
+| Problem 5 | Production incident simulation | TBD | Planned |
 
 ## Participant Model
 
