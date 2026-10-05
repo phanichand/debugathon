@@ -20,9 +20,8 @@ management:
     health:
       show-details: never
 
-admin:
-  token: local-dev-admin-token-change-me
-
 operator:
   deterministic-timeout-delay-ms: 3000
   initial-profile: NORMAL
+  degraded:
+    slow-booking-basis-points: 180

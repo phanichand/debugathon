@@ -10,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class OperatorRequestFactoryTest {
 
-    private final RequestMetadataFactory metadataFactory = new RequestMetadataFactory();
+    private final RequestMetadataFactory metadataFactory =
+            new RequestMetadataFactory(new OutboundRequestIdentityFactory());
     private final OperatorRequestFactory requestFactory = new OperatorRequestFactory(metadataFactory);
 
     @Test

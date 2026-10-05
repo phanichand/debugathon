@@ -26,9 +26,11 @@ class OperatorRetryExecutorTest {
         wireMockServer = new WireMockServer(0);
         wireMockServer.start();
         OperatorClient client = new OperatorClient(RestClient.builder(), "http://localhost:" + wireMockServer.port(), 200L);
-        RequestMetadataFactory metadataFactory = new RequestMetadataFactory();
+        RequestMetadataFactory metadataFactory =
+                new RequestMetadataFactory(new OutboundRequestIdentityFactory());
         OperatorRequestFactory requestFactory = new OperatorRequestFactory(metadataFactory);
-        retryExecutor = new OperatorRetryExecutor(requestFactory, client, 2, new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
+        retryExecutor = new OperatorRetryExecutor(requestFactory, client, 2,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
     }
 
     @AfterEach

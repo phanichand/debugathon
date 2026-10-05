@@ -38,7 +38,7 @@ class OperatorControllerTest {
 
     @BeforeEach
     void stubZeroLatency() {
-        when(latencyGenerator.nextDelay()).thenReturn(java.time.Duration.ZERO);
+        when(latencyGenerator.nextDelay(anyString())).thenReturn(java.time.Duration.ZERO);
     }
 
     @Test

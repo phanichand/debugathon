@@ -31,7 +31,7 @@ class OperatorLatencyIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("operator.deterministic-timeout-delay-ms", () -> "300");
-        registry.add("admin.token", () -> "test-secret-token");
+        registry.add("operator.initial-profile", () -> "DETERMINISTIC_TIMEOUT");
     }
 
     @LocalServerPort
@@ -42,12 +42,6 @@ class OperatorLatencyIntegrationTest {
 
     @Test
     void deterministicTimeoutProfileDelaysCreateByAtLeastTheConfiguredAmount() {
-        HttpHeaders scenarioHeaders = new HttpHeaders();
-        scenarioHeaders.set("X-Admin-Token", "test-secret-token");
-        scenarioHeaders.setContentType(MediaType.APPLICATION_JSON);
-        restTemplate.postForEntity("http://localhost:" + port + "/internal/scenarios/operator",
-                new HttpEntity<>("{\"profile\":\"DETERMINISTIC_TIMEOUT\"}", scenarioHeaders), String.class);
-
         HttpHeaders bookingHeaders = new HttpHeaders();
         bookingHeaders.set("X-Idempotency-Key", "IDEMP-LATENCY-1");
         bookingHeaders.setContentType(MediaType.APPLICATION_JSON);

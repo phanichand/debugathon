@@ -19,8 +19,8 @@ public class OperatorController {
     private final LatencyGenerator latencyGenerator;
 
     public OperatorController(OperatorBookingService operatorBookingService,
-                               OperatorBookingRepository operatorBookingRepository,
-                               LatencyGenerator latencyGenerator) {
+                              OperatorBookingRepository operatorBookingRepository,
+                              LatencyGenerator latencyGenerator) {
         this.operatorBookingService = operatorBookingService;
         this.operatorBookingRepository = operatorBookingRepository;
         this.latencyGenerator = latencyGenerator;
@@ -30,7 +30,7 @@ public class OperatorController {
     public ResponseEntity<OperatorBookingResponse> create(
             @RequestHeader("X-Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody OperatorBookingRequest request) throws InterruptedException {
-        Thread.sleep(latencyGenerator.nextDelay().toMillis());
+        Thread.sleep(latencyGenerator.nextDelay(request.sourceBookingId()).toMillis());
         var result = operatorBookingService.createOrReuse(
                 idempotencyKey, request.sourceBookingId(), request.tripId(),
                 request.passengers(), request.amount());

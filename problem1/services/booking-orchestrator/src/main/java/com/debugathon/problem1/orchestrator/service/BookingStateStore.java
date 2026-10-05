@@ -54,18 +54,18 @@ public class BookingStateStore {
 
     @Transactional
     public void recordOperatorFailed(Long bookingId, String correlationId,
-                                       List<com.debugathon.problem1.orchestrator.gateway.OperatorAttemptRecord> attempts) {
+                                      List<com.debugathon.problem1.orchestrator.gateway.OperatorAttemptRecord> attempts) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow();
         booking.markOperatorFailed();
         saveAttempts(booking, correlationId, attempts);
     }
 
     private void saveAttempts(Booking booking, String correlationId,
-                               List<com.debugathon.problem1.orchestrator.gateway.OperatorAttemptRecord> attempts) {
+                              List<com.debugathon.problem1.orchestrator.gateway.OperatorAttemptRecord> attempts) {
         for (var record : attempts) {
             long durationMs = java.time.Duration.between(record.requestTimestamp(), record.responseTimestamp()).toMillis();
             bookingAttemptRepository.save(new BookingAttempt(booking, record.attemptNumber(), AttemptType.OPERATOR,
-                    record.requestTimestamp(), record.responseTimestamp(), null, correlationId, null,
+                    record.requestTimestamp(), record.responseTimestamp(), record.idempotencyKey(), correlationId, null,
                     record.outcome(), record.errorType(), durationMs));
         }
     }

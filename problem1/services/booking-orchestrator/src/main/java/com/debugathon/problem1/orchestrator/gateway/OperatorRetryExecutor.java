@@ -46,14 +46,15 @@ public class OperatorRetryExecutor {
             try {
                 OperatorBookingResponse response = timedBook(attemptRequest);
                 Instant responseTimestamp = Instant.now();
-                attempts.add(new OperatorAttemptRecord(attemptNumber, requestTimestamp, responseTimestamp,
-                        AttemptOutcome.SUCCESS, null));
+                attempts.add(new OperatorAttemptRecord(attemptNumber, attemptRequest.idempotencyKey(),
+                        requestTimestamp, responseTimestamp, AttemptOutcome.SUCCESS, null));
                 return new OperatorExecutionResult(response, attempts);
             } catch (ResourceAccessException timeout) {
                 meterRegistry.counter("operator_timeouts_total").increment();
                 Instant responseTimestamp = Instant.now();
-                attempts.add(new OperatorAttemptRecord(attemptNumber, requestTimestamp, responseTimestamp,
-                        AttemptOutcome.FAILURE, timeout.getClass().getSimpleName()));
+                attempts.add(new OperatorAttemptRecord(attemptNumber, attemptRequest.idempotencyKey(),
+                        requestTimestamp, responseTimestamp, AttemptOutcome.FAILURE,
+                        timeout.getClass().getSimpleName()));
                 if (attemptNumber == maxAttempts) {
                     throw new OperatorExhaustedRetriesException(attempts, timeout);
                 }

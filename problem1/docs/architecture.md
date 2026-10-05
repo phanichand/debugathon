@@ -62,11 +62,8 @@ customers.
 Represents an external operator/bus booking system that
 booking-orchestrator calls into. Not called directly by customers.
 
-- Accepts an idempotency key per request, intended to let repeated requests
-  for the same logical booking resolve to the same operator-side record
-  rather than creating a duplicate.
-- Creates a new operator booking the first time it sees a given idempotency
-  key. It processes each request to completion independently of whether the
+- Creates and persists operator-side reservations from orchestrator requests.
+- Processes each accepted request to completion independently of whether the
   calling service is still waiting for a response.
 
 ## Observability
