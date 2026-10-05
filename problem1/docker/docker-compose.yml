@@ -1,3 +1,4 @@
+name: debugathon-problem1
 services:
   postgres:
     image: postgres:16
