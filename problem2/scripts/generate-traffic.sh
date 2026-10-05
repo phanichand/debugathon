@@ -21,12 +21,12 @@ for i in $(seq 1 "${COUNT}"); do
   curl -sS -D "${LOGIN_HEADERS}" -o "${LOGIN_BODY}" -X POST "${BASE_URL}/login"     -H "Content-Type: application/json"     -d "{\"username\":\"${USERNAME}\"}"
 
   TOKEN=$(jq -r '.access_token' "${LOGIN_BODY}")
-  LOGIN_POD=$(awk 'BEGIN{IGNORECASE=1} /^X-Auth-Pod:/ {gsub("\r","",$2); print $2}' "${LOGIN_HEADERS}" | tail -1)
+  LOGIN_POD=$(awk 'tolower($1) == "x-auth-pod:" {gsub("\r","",$2); print $2}' "${LOGIN_HEADERS}" | tail -1)
 
   ME_HEADERS=$(mktemp)
   ME_BODY=$(mktemp)
   HTTP_CODE=$(curl -sS -D "${ME_HEADERS}" -o "${ME_BODY}" -w "%{http_code}"     "${BASE_URL}/me"     -H "Authorization: Bearer ${TOKEN}")
-  ME_POD=$(awk 'BEGIN{IGNORECASE=1} /^X-Auth-Pod:/ {gsub("\r","",$2); print $2}' "${ME_HEADERS}" | tail -1)
+  ME_POD=$(awk 'tolower($1) == "x-auth-pod:" {gsub("\r","",$2); print $2}' "${ME_HEADERS}" | tail -1)
 
   if [[ "${HTTP_CODE}" == "200" ]]; then
     SUCCESS=$((SUCCESS + 1))
@@ -39,7 +39,7 @@ for i in $(seq 1 "${COUNT}"); do
     RETRY_HEADERS=$(mktemp)
     RETRY_BODY=$(mktemp)
     RETRY_CODE=$(curl -sS -D "${RETRY_HEADERS}" -o "${RETRY_BODY}" -w "%{http_code}"       "${BASE_URL}/me"       -H "Authorization: Bearer ${TOKEN}")
-    RETRY_POD=$(awk 'BEGIN{IGNORECASE=1} /^X-Auth-Pod:/ {gsub("\r","",$2); print $2}' "${RETRY_HEADERS}" | tail -1)
+    RETRY_POD=$(awk 'tolower($1) == "x-auth-pod:" {gsub("\r","",$2); print $2}' "${RETRY_HEADERS}" | tail -1)
 
     if [[ "${RETRY_CODE}" == "200" ]]; then
       RECOVERED=$((RECOVERED + 1))
