@@ -31,7 +31,8 @@ Describe a safe mitigation and its trade-offs.
 
 ## 8. Permanent fix
 
-Describe or implement the production-grade fix.
+Provide the implemented, tested fix (patch or commit) and explain why it addresses
+the cause. Include before/after runtime evidence and regression results.
 
 ## 9. Validation
 
