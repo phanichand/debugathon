@@ -22,7 +22,10 @@ For example:
 cd problem1
 ```
 
-From that point onward, use the instructions inside that problem.
+From that point onward, use the instructions inside that problem. Run one problem
+at a time per machine; stop the previous environment before switching. Each team
+uses its own local environment. Setup, incident generation and investigation are
+self-service; the organizer supplies event rules and the submission destination.
 
 ## Problems
 
