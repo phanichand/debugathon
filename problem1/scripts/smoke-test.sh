@@ -3,19 +3,36 @@ set -euo pipefail
 
 BASE_URL="http://localhost:8080"
 
-echo "Creating booking..."
-CREATE_RESPONSE=$(curl -sS -X POST "${BASE_URL}/api/bookings" \
-  -H "Content-Type: application/json" \
-  -d '{"tripId":"TRIP-100","customerId":"CUSTOMER-21","passengers":[{"name":"Arun Kumar"}],"amount":1240.00}')
+echo "Waiting for booking API readiness (up to 180 seconds)..."
+deadline=$((SECONDS + 180))
+until curl -fsS --connect-timeout 2 --max-time 3 "${BASE_URL}/actuator/health" | jq -e '.status == "UP"' >/dev/null 2>&1; do
+  if (( SECONDS >= deadline )); then
+    echo "FAIL: API not ready; inspect docker compose -f docker/docker-compose.yml ps -a and logs" >&2
+    exit 1
+  fi
+  sleep 2
+done
 
-echo "Response: ${CREATE_RESPONSE}"
-
-STATUS=$(echo "${CREATE_RESPONSE}" | jq -r '.status')
-BOOKING_ID=$(echo "${CREATE_RESPONSE}" | jq -r '.bookingId')
-OPERATOR_BOOKING_ID=$(echo "${CREATE_RESPONSE}" | jq -r '.operatorBookingId')
-
+# Exercise normal behavior without changing the intentionally degraded profile.
+STATUS=""
+for attempt in 1 2 3 4 5; do
+  echo "Creating independent smoke booking ${attempt}/5..."
+  CREATE_RESPONSE=$(curl -fsS --connect-timeout 3 --max-time 30 -X POST "${BASE_URL}/api/bookings" \
+    -H "Content-Type: application/json" \
+    -d '{"tripId":"TRIP-100","customerId":"CUSTOMER-21","passengers":[{"name":"Arun Kumar"}],"amount":1240.00}')
+  echo "Response: ${CREATE_RESPONSE}"
+  STATUS=$(echo "${CREATE_RESPONSE}" | jq -r '.status')
+  BOOKING_ID=$(echo "${CREATE_RESPONSE}" | jq -r '.bookingId')
+  OPERATOR_BOOKING_ID=$(echo "${CREATE_RESPONSE}" | jq -r '.operatorBookingId')
+  if [[ "${STATUS}" == "CONFIRMED" ]]; then break; fi
+  if [[ "${STATUS}" != "FAILED" ]]; then
+    echo "FAIL: unexpected booking status ${STATUS}" >&2
+    exit 1
+  fi
+  echo "Observed incident booking ${BOOKING_ID}; keeping it for investigation."
+done
 if [[ "${STATUS}" != "CONFIRMED" ]]; then
-  echo "FAIL: expected status CONFIRMED, got ${STATUS}"
+  echo "FAIL: no normal booking succeeded in five attempts; inspect service logs." >&2
   exit 1
 fi
 
