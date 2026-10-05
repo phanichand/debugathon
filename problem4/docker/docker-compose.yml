@@ -15,8 +15,17 @@ x-app: &app
     RECEIPT_TIMEOUT_RATE: ${RECEIPT_TIMEOUT_RATE:-0.0005}
   stop_grace_period: 15s
 services:
+  kafka-storage-init:
+    image: apache/kafka:3.9.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R 1000:1000 /var/lib/kafka/data"]
+    volumes: ["kafka-data:/var/lib/kafka/data"]
   kafka:
     image: apache/kafka:3.9.0
+    depends_on:
+      kafka-storage-init:
+        condition: service_completed_successfully
     ports: ["127.0.0.1:19094:19094"]
     environment:
       KAFKA_NODE_ID: 1
@@ -31,8 +40,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
-    volumes: ["kafka-data:/tmp/kraft-combined-logs"]
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes: ["kafka-data:/var/lib/kafka/data"]
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
       interval: 5s
