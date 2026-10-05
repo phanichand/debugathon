@@ -1,0 +1,31 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5444/settlements}
+    username: settlement
+    password: settlement
+    hikari:
+      maximum-pool-size: 40
+      connection-timeout: 5000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+platform:
+  role: ${ROLE:producer}
+  bootstrap: ${KAFKA_BOOTSTRAP:localhost:19094}
+  topic: booking-events
+  group: settlement-workers
+  workers: ${WORKERS:32}
+  queue-capacity: 512
+  checkpoint-ms: ${CHECKPOINT_MS:1000}
+  review-ms: ${REVIEW_MS:8000}
+  receipt-timeout-rate: ${RECEIPT_TIMEOUT_RATE:0.0005}
+logging:
+  level:
+    org.apache.kafka: WARN
