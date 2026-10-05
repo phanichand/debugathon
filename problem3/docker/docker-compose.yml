@@ -1,0 +1,104 @@
+name: debugathon-problem3
+
+x-api: &api
+  image: debugathon-problem3:local
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  env_file: ../config/shared.env
+  command: ["sh", "-c", 'python scripts/render_bundle.py "deploy/releases/$$DEPLOYMENT_REVISION.json" /runtime/bundle.json && exec uvicorn app.availability:app --host 0.0.0.0 --port 8000 --no-access-log']
+  depends_on:
+    supplier:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+    interval: 5s
+    timeout: 4s
+    retries: 20
+  networks: [incident]
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    volumes: [catalog:/var/lib/postgresql/data]
+    networks: [incident]
+
+  supplier:
+    image: debugathon-problem3:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["uvicorn", "app.supplier:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    environment:
+      DATABASE_URL: postgresql://catalog:catalog@db:5432/catalog
+    ports: ["127.0.0.1:8310:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    networks: [incident]
+
+  availability-a:
+    <<: *api
+    environment: {POD_NAME: availability-a, DEPLOYMENT_REVISION: r41}
+    ports: ["127.0.0.1:8301:8000"]
+  availability-b:
+    <<: *api
+    environment: {POD_NAME: availability-b, DEPLOYMENT_REVISION: r41}
+    ports: ["127.0.0.1:8302:8000"]
+  availability-c:
+    <<: *api
+    environment: {POD_NAME: availability-c, DEPLOYMENT_REVISION: r41}
+    ports: ["127.0.0.1:8303:8000"]
+  availability-d:
+    <<: *api
+    environment: {POD_NAME: availability-d, DEPLOYMENT_REVISION: r42}
+    ports: ["127.0.0.1:8304:8000"]
+
+  gateway:
+    image: nginx:1.27-alpine
+    ports: ["127.0.0.1:8300:8080"]
+    volumes: ["./nginx/nginx.conf:/etc/nginx/nginx.conf:ro"]
+    depends_on:
+      availability-a: {condition: service_healthy}
+      availability-b: {condition: service_healthy}
+      availability-c: {condition: service_healthy}
+      availability-d: {condition: service_healthy}
+    networks: [incident]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports: ["127.0.0.1:9390:9090"]
+    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    networks: [incident]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports: ["127.0.0.1:3300:3000"]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: local-debugathon
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks: [incident]
+
+networks:
+  incident:
+volumes:
+  catalog:

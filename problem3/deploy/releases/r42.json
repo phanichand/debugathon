@@ -1,0 +1,10 @@
+{
+  "revision": "r42",
+  "bindings": [
+    {"policy": "config/policies/availability.json"},
+    {
+      "policy": "config/policies/interactive.json",
+      "overlay": {"selector": {"region": "ap-south"}}
+    }
+  ]
+}

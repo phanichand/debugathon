@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: availability
+    static_configs:
+      - targets: [availability-a:8000, availability-b:8000, availability-c:8000, availability-d:8000]
+  - job_name: supplier
+    static_configs:
+      - targets: [supplier:8000]

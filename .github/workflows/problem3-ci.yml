@@ -1,0 +1,50 @@
+name: Problem 3 CI
+on:
+  push:
+    paths: ['problem3/**', '.github/workflows/problem3-ci.yml']
+  pull_request:
+    paths: ['problem3/**', '.github/workflows/problem3-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: problem3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: pip install -r requirements.txt
+      - name: Application tests
+        run: python -m pytest -q
+      - name: Compose validity
+        run: docker compose -f docker/docker-compose.yml config --quiet
+      - name: Start environment
+        run: docker compose -f docker/docker-compose.yml up -d --build --wait --wait-timeout 180
+      - name: Environment smoke test
+        run: python scripts/smoke_test.py
+      - name: Generate customer traffic
+        run: python scripts/generate_traffic.py --count 900 --rps 10
+      - name: Verify incident signal
+        run: python scripts/check_signal.py artifacts/traffic.json
+      - name: Save diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -f docker/docker-compose.yml ps > artifacts/containers.txt
+          docker compose -f docker/docker-compose.yml logs --no-color > artifacts/compose.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: problem3-diagnostics
+          path: problem3/artifacts/
+          retention-days: 7
+      - name: Stop environment
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down -v

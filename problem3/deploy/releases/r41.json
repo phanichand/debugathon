@@ -1,0 +1,7 @@
+{
+  "revision": "r41",
+  "bindings": [
+    {"policy": "config/policies/availability.json"},
+    {"policy": "config/policies/interactive.json"}
+  ]
+}

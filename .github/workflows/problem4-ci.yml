@@ -32,6 +32,21 @@ jobs:
         run: ./scripts/smoke-test.sh
       - name: Verify ordinary processing and incident symptoms
         run: python3 scripts/verify.py
+      - name: Normal workload calibration
+        run: |
+          ./scripts/generate-traffic.sh > evidence/normal-workload.log
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          reports=list(Path('evidence').glob('traffic-*-reconciliation.json'))
+          assert len(reports)==1, reports
+          r=json.loads(reports[0].read_text())
+          summary={'expected':r['expected'],'missing':len(r['missing']),'duplicateEvents':len(r['duplicates']),'missingPercent':100*len(r['missing'])/max(1,r['expected'])}
+          Path('evidence/normal-summary.json').write_text(json.dumps(summary,indent=2))
+          print(summary)
+          assert r['expected']==36000, summary
+          assert len(r['missing'])>0 and len(r['duplicates'])>0, summary
+          PYTHON
       - name: Capture logs
         if: always()
         run: |
