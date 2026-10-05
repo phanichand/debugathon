@@ -1,0 +1,53 @@
+name: Problem 1 CI
+on:
+  push:
+    paths: ["problem1/**", ".github/workflows/problem1-ci.yml"]
+  pull_request:
+    paths: ["problem1/**", ".github/workflows/problem1-ci.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: problem1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Application tests
+        run: ./gradlew --no-daemon test
+      - name: Validate Compose
+        run: docker compose -f docker/docker-compose.yml config --quiet
+      - name: Start environment
+        run: docker compose -f docker/docker-compose.yml up -d --build
+      - name: Normal operation smoke
+        run: ./scripts/smoke-test.sh
+      - name: Observe customer incident
+        run: |
+          mkdir -p evidence
+          set -o pipefail
+          COUNT=300 ./scripts/generate-traffic.sh | tee evidence/traffic.log
+          grep -q 'FAILED:' evidence/traffic.log
+      - name: Capture diagnostics
+        if: always()
+        run: |
+          mkdir -p evidence
+          docker compose -f docker/docker-compose.yml ps -a > evidence/containers.txt
+          docker compose -f docker/docker-compose.yml logs --no-color > evidence/compose.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: problem1-diagnostics
+          path: |
+            problem1/evidence/
+            problem1/services/**/build/reports/tests/
+          retention-days: 7
+      - name: Stop environment
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down -v
