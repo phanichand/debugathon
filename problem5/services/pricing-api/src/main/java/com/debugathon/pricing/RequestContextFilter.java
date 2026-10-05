@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
+@Component("pricingRequestContextFilter")
 public class RequestContextFilter extends OncePerRequestFilter {
     private final String instance;
     public RequestContextFilter(@Value("${pricing.instance}") String instance) { this.instance = instance; }

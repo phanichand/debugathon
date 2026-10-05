@@ -43,7 +43,8 @@ public class QuoteAssembler {
         Rule selected = rules.stream().filter(r -> price.amount().compareTo(r.lower()) >= 0
             && price.amount().compareTo(r.upper()) < 0).findFirst().orElseThrow();
         BigDecimal net = price.amount().divide(BigDecimal.ONE.add(selected.rate()), 2, RoundingMode.HALF_UP);
-        Events.emit("quote.prepared", price, "policyId", selected.id());
+        Events.emit("quote.prepared", price, "policyId", selected.id(),
+            "netAmount", net, "taxAmount", price.amount().subtract(net));
         return new Quote(price, net, price.amount().subtract(net), selected.id());
     }
     @PreDestroy public void close() { executor.shutdown(); }
