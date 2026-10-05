@@ -1,0 +1,78 @@
+name: Problem 2 CI
+
+on:
+  push:
+    paths:
+      - "problem2/**"
+      - ".github/workflows/problem2-ci.yml"
+  pull_request:
+    paths:
+      - "problem2/**"
+      - ".github/workflows/problem2-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install unit-test dependencies
+        run: pip install -r problem2/services/auth-service/requirements.txt
+
+      - name: Run Python unit tests
+        working-directory: problem2/services/auth-service
+        env:
+          PYTHONPATH: .
+        run: pytest -q
+
+      - name: Validate Docker Compose
+        working-directory: problem2
+        run: docker compose -f docker/docker-compose.yml config
+
+      - name: Start Problem 2
+        working-directory: problem2
+        run: docker compose -f docker/docker-compose.yml up -d --build
+
+      - name: Show container status
+        working-directory: problem2
+        run: docker compose -f docker/docker-compose.yml ps
+
+      - name: Run smoke test
+        working-directory: problem2
+        run: ./scripts/smoke-test.sh
+
+      - name: Verify incident signal
+        working-directory: problem2
+        run: |
+          output="$(COUNT=150 ./scripts/generate-traffic.sh)"
+          echo "$output"
+          initial_401="$(echo "$output" | awk '/Initial 401:/ {print $3}')"
+          recovered="$(echo "$output" | awk '/Recovered retry:/ {print $3}')"
+
+          if [ -z "$initial_401" ] || [ "$initial_401" -lt 1 ]; then
+            echo "Expected at least one immediate 401, but saw: ${initial_401:-none}"
+            exit 1
+          fi
+
+          if [ -z "$recovered" ] || [ "$recovered" -lt 1 ]; then
+            echo "Expected at least one retry recovery, but saw: ${recovered:-none}"
+            exit 1
+          fi
+
+      - name: Dump logs on failure
+        if: failure()
+        working-directory: problem2
+        run: docker compose -f docker/docker-compose.yml logs --no-color
+
+      - name: Stop Problem 2
+        if: always()
+        working-directory: problem2
+        run: docker compose -f docker/docker-compose.yml down -v
