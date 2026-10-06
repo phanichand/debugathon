@@ -7,29 +7,80 @@ All commands below are intended to be run from the `problem1/` directory.
 
 ## Local setup checklist
 
-Use a Bash-compatible terminal on macOS/Linux. On Windows, use a WSL2 Linux
-terminal with Docker integration enabled; do not paste these commands into
-PowerShell or Command Prompt. Install Git and a running Docker engine with
-Compose v2.20+ before the event. Install the additional tools listed above/below
-in the same terminal environment.
+| Tool | Why you need it | Check |
+|---|---|---|
+| Git | Download and track code | `git --version` |
+| Docker + Compose v2.20 or newer | Run the complete local stack | `docker info`, `docker compose version` |
+| Bash-compatible terminal | Run the supplied commands | `bash --version` |
+| curl | Send HTTP requests | `curl --version` |
+| Web browser | View dashboards at the listed localhost URLs | Open your browser |
+| Your preferred code editor | Read/edit source and the submission template | Open the problem folder |
+| jq | Required: format/process JSON | `jq --version` |
+| Host Python / Java | Not required for Docker startup | Optional only for host development/tests |
 
+Suggested starting allocation: **4 CPUs and 6 GB RAM** for Docker. This is planning guidance, not a benchmarked minimum.
+Leave additional memory for your editor/browser and free disk for container images.
+Linux CI is verified; macOS/Windows setup should be rehearsed on your own machine.
+
+
+### Install on your operating system
+
+Use your company's approved Docker runtime if one is already provided. Do not
+install a second runtime just for this exercise.
+
+**macOS**
+1. Install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/),
+   choosing Apple silicon or Intel as appropriate, then open Docker and wait for it to start.
+2. Open Terminal. If using [Homebrew](https://brew.sh/), install the command-line tools
+   listed in the table with `brew install git jq python` (omit jq/Python if not needed).
+   macOS supplies curl. Without Homebrew, use the official
+   [Git](https://git-scm.com/downloads/), [jq](https://jqlang.org/download/) and
+   [Python](https://www.python.org/downloads/) installation pages.
+3. Run `bash` in Terminal, then run the checks below.
+
+**Windows**
+1. Follow [Microsoft's WSL installation instructions](https://learn.microsoft.com/en-us/windows/wsl/install)
+   to install a WSL2 Ubuntu distribution. That one-time installation uses an
+   administrator PowerShell window; restart Windows if requested.
+2. Install and start [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/).
+   Enable its [WSL2 backend and Ubuntu integration](https://docs.docker.com/desktop/features/wsl/).
+3. Open **Ubuntu** from the Start menu. Install the tools inside Ubuntu using the
+   Ubuntu commands below. Run all exercise commands there, not in PowerShell.
+   Clone the repository inside your Linux home directory.
+
+**Ubuntu Linux (and tools inside WSL Ubuntu)**
+Install command-line tools in the Ubuntu terminal:
 ```bash
-git --version
-docker info
-docker compose version
-curl --version
+sudo apt update
+sudo apt install -y git curl jq python3 python3-venv
 ```
+This installs the combined toolset for all five problems; jq/Python can be omitted
+when the table says they are not needed. On native Ubuntu, follow the official
+[Docker Engine and Compose plugin instructions](https://docs.docker.com/engine/install/ubuntu/).
+For WSL using Docker Desktop, use its integration instead of installing another
+Docker Engine. Other Linux distributions should use their own package manager
+and the [Docker installation guide](https://docs.docker.com/engine/install/).
 
-If this problem lists Python or jq, also check `python3 --version` or `jq --version`.
-A missing command is a setup issue; install it before continuing. Container images
-include application runtimes; a local Java/Python development environment is only
-needed for tests run outside containers.
+Installation may need administrator assistance. Before continuing, `docker info`
+must work from the same terminal you will use for the exercise.
 
-Run one problem at a time on each team machine. Stop the previous problem from
-its own directory before switching: some exercises share host ports. Each team
-needs its own checkout and runtime. Initial image/dependency downloads may take
-several minutes and need network access; they are outside investigation time.
-No organizer action is required to activate the incident.
+
+### Before starting the incident
+
+Checks should print versions, and `docker info` should show a **Server** section
+without a connection error. If a command is missing, return to the installation
+steps. For Python, check that `python3 --version` meets the table's requirement.
+
+The application runtimes and required PostgreSQL, Redis, Kafka, Grafana and
+Prometheus services are supplied by Docker as applicable. Do not install these
+servers separately. Local Java/build tools are only needed if you choose to run
+Java tests outside Docker. **Host Python is required for the supplied scripts in
+Problems 3 and 5**, even though the applications run in containers.
+
+Build/download dependencies before the event; initial startup needs network access.
+Run one problem at a time per machine and stop the previous exercise before
+switching because some ports overlap. Each team uses its own checkout/runtime.
+Organizer action is not required to activate an incident.
 
 
 ## 1. Enter Problem 1
@@ -66,21 +117,9 @@ Start with:
 Your team owns the incident. Do not look for an organizer answer key; none is
 included in the participant repository.
 
-## 3. Prerequisites
+## 3. Check tools
 
-You need:
-
-- Docker with Docker Compose v2.20+
-- `curl`
-- `jq`
-
-Check Docker Compose:
-
-```bash
-docker compose version
-```
-
-Use Compose v2; the legacy standalone docker-compose v1 is not supported.
+Complete the local setup checklist above before startup. Docker Compose v1 is not supported.
 
 ## 4. Start the Environment
 
