@@ -21,7 +21,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare private runtime configuration
         run: |
-          test -n "$CUBEAPM_TOKEN" || { echo 'Missing CUBEAPM_TOKEN Actions secret'; exit 1; }
+          python3 - <<'PYTOKEN'
+          import os
+          token = os.environ.get('CUBEAPM_TOKEN', '').strip()
+          if not token or any(ord(c) < 33 or ord(c) > 126 for c in token):
+              raise SystemExit('CUBEAPM_TOKEN must be a single nonempty token, not a config file or multiline value')
+          print('::add-mask::' + token)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CUBEAPM_TOKEN=' + token + '\n')
+          PYTOKEN
           key=$(openssl rand -hex 16)
           echo "::add-mask::$key"
           echo "CUBEAPM_SESSION_KEY=$key" >> "$GITHUB_ENV"
