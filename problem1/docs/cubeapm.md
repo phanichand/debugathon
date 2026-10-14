@@ -2,8 +2,10 @@
 
 This optional pilot adds CubeAPM alongside the existing Grafana/Prometheus/Loki
 stack. It instruments all four Java services with a pinned, checksum-verified
-OpenTelemetry agent. Application behaviour is unchanged. Runtime acceptance is
-pending: do not treat configuration validation as proof of telemetry ingestion.
+OpenTelemetry agent. Application code is unchanged. Linux CI verified the instrumented stack, normal
+bookings, incident reproduction, and CubeAPM trace/metric/log readback on
+14 October 2026: [verification run](https://github.com/phanichand/debugathon/actions/runs/38519617444).
+Interactive login/SSO and participant laptop hardware still need a local rehearsal.
 
 ## Prerequisites
 
