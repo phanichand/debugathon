@@ -42,6 +42,27 @@ Select environment `debugathon-problem1`. Only the browser port is published;
 telemetry travels on the local Compose network. Built-in demo traces are disabled
 so they cannot be mistaken for exercise traffic.
 
+## Automated readback check
+
+After smoke/traffic, run the same check as CI. This uses a temporary Python
+container on the private Compose network; host Python is not required.
+
+```bash
+docker run --rm --network debugathon-problem1_default \
+  -v "$PWD/scripts/verify-cubeapm.py:/verify.py:ro" \
+  python:3.12-alpine python -u /verify.py
+```
+
+The check creates a real booking with a known trace ID, reads that trace back
+from CubeAPM, checks connected spans across all four services, queries the
+booking counter and each service's logs, and checks booking/trace correlation.
+It fails on missing data rather than accepting an available UI as success.
+Query port 3140 stays inside the Compose network.
+
+The GitHub workflow `Problem 1 CubeAPM verification` uses the repository Actions
+secret `CUBEAPM_TOKEN`, generates an ephemeral session key, and tears down its
+own data volumes. It does not test your organisation's interactive SSO/login.
+
 ## Verify before using this pilot
 
 Wait up to two minutes after traffic for export/ingestion. Record these results:

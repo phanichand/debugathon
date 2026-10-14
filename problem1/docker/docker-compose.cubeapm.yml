@@ -9,6 +9,7 @@ x-otel: &otel
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://cubeapm:4318/v1/traces
   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://cubeapm:3130/api/logs/insert/opentelemetry/v1/logs
   OTEL_EXPORTER_OTLP_LOGS_HEADERS: Cube-Stream-Fields=service.name%2Cseverity
+  OTEL_INSTRUMENTATION_LOGBACK_APPENDER_EXPERIMENTAL_CAPTURE_MDC_ATTRIBUTES: correlationId,bookingId,attemptNumber,operatorBookingId,exceptionType
   OTEL_RESOURCE_ATTRIBUTES: cube.environment=debugathon-problem1
 
 services:

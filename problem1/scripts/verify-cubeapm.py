@@ -82,4 +82,18 @@ for service in sorted(SERVICES):
                      'start': start, 'end': int(time.time()), 'limit': 1}, post=True)
         return any(json.loads(line).get('_msg') for line in raw.splitlines() if line.strip())
     eventually(logs, 'CubeAPM returns logs for ' + service)
+def correlated_log():
+    raw = query('/api/logs/select/logsql/query',
+                {'query': '{service.name="booking-orchestrator"}',
+                 'start': start, 'end': int(time.time()), 'limit': 1000}, post=True)
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if record.get('trace_id') == trace_id and record.get('bookingId') == result['bookingId']:
+            return True
+    return False
+
+
+eventually(correlated_log, 'booking identifier and trace ID survive log export')
 print('PASS: CubeAPM trace, metric and log readback verified; trace=' + trace_id)
