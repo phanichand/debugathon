@@ -353,3 +353,9 @@ docker compose -f docker/docker-compose.yml logs --tail 100
 - Script permission error: use `bash scripts/script-name.sh` with the actual filename.
 - Still blocked: share the failing command, terminal output and container status
   with event support. Do not send only “it does not work.”
+
+## CubeAPM monitoring (optional pilot)
+
+See [CubeAPM setup and verification](docs/cubeapm.md) to instrument all four
+services and collect the existing metrics. Requires a CubeAPM account token.
+The standard Grafana setup above remains available.

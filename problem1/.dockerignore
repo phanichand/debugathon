@@ -1,3 +1,5 @@
 build/
 .gradle/
 *.log
+# Never include local monitoring credentials in an image build context.
+docker/cubeapm/.env

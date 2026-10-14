@@ -1,0 +1,71 @@
+name: Problem 1 CubeAPM verification
+on:
+  push:
+    branches: [feat/problem1-cubeapm]
+    paths: ["problem1/**", ".github/workflows/problem1-cubeapm.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cubeapm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: problem1
+    env:
+      CUBEAPM_TOKEN: ${{ secrets.CUBEAPM_TOKEN }}
+      CUBEAPM_ADMIN_EMAIL: ci@example.invalid
+      COMPOSE_FILE: docker/docker-compose.yml:docker/docker-compose.cubeapm.yml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare private runtime configuration
+        run: |
+          python3 - <<'PYTOKEN'
+          import os
+          token = os.environ.get('CUBEAPM_TOKEN', '').strip()
+          if not token or any(ord(c) < 33 or ord(c) > 126 for c in token):
+              raise SystemExit('CUBEAPM_TOKEN must be a single nonempty token, not a config file or multiline value')
+          print('::add-mask::' + token)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CUBEAPM_TOKEN=' + token + '\n')
+          PYTOKEN
+          key=$(openssl rand -hex 16)
+          echo "::add-mask::$key"
+          echo "CUBEAPM_SESSION_KEY=$key" >> "$GITHUB_ENV"
+      - name: Validate configuration
+        run: docker compose config --quiet
+      - name: Start CubeAPM
+        run: |
+          docker compose up -d cubeapm
+          timeout 180 bash -c 'until curl -fsS http://localhost:3125/ >/dev/null; do sleep 3; done'
+      - name: Build and start instrumented applications
+        run: docker compose up -d --build --wait --wait-timeout 240
+      - name: Normal booking smoke
+        run: ./scripts/smoke-test.sh
+      - name: Verify incident remains observable
+        run: |
+          mkdir -p evidence
+          set -o pipefail
+          COUNT=300 ./scripts/generate-traffic.sh | tee evidence/cubeapm-traffic.log
+          grep -q 'FAILED:' evidence/cubeapm-traffic.log
+      - name: Read back traces metrics and logs from CubeAPM
+        run: |
+          set -o pipefail
+          docker run --rm --network debugathon-problem1_default \
+            -v "$PWD/scripts/verify-cubeapm.py:/verify.py:ro" \
+            python:3.12-alpine python -u /verify.py | tee evidence/cubeapm-verification.log
+      - name: Diagnostics (GitHub masks secret values)
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color --tail 100 cubeapm cubeapm-collector booking-api booking-orchestrator payment-simulator operator-simulator
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: problem1-cubeapm-evidence
+          path: problem1/evidence/cubeapm-*.log
+          retention-days: 7
+      - name: Remove ephemeral environment
+        if: always()
+        run: docker compose down -v
