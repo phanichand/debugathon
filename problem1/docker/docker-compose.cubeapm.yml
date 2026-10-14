@@ -1,0 +1,66 @@
+# Add to docker-compose.yml; paths are relative to that base file.
+x-otel: &otel
+  JAVA_TOOL_OPTIONS: -javaagent:/otel/agent.jar
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_TRACES_SAMPLER: always_on
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: otlp
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://cubeapm:4318/v1/traces
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://cubeapm:3130/api/logs/insert/opentelemetry/v1/logs
+  OTEL_EXPORTER_OTLP_LOGS_HEADERS: Cube-Stream-Fields=service.name%2Cseverity
+  OTEL_RESOURCE_ATTRIBUTES: cube.environment=debugathon-problem1
+
+services:
+  booking-api:
+    build:
+      dockerfile: docker/cubeapm/Dockerfile
+      args: {SERVICE: booking-api}
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: booking-api
+  booking-orchestrator:
+    build:
+      dockerfile: docker/cubeapm/Dockerfile
+      args: {SERVICE: booking-orchestrator}
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: booking-orchestrator
+  payment-simulator:
+    build:
+      dockerfile: docker/cubeapm/Dockerfile
+      args: {SERVICE: payment-simulator}
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: payment-simulator
+  operator-simulator:
+    build:
+      dockerfile: docker/cubeapm/Dockerfile
+      args: {SERVICE: operator-simulator}
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: operator-simulator
+  cubeapm:
+    image: cubeapm/cubeapm:v1.14.0
+    ports: ["127.0.0.1:3125:3125"]
+    environment:
+      CUBE_TOKEN: ${CUBEAPM_TOKEN:?Set CUBEAPM_TOKEN in docker/cubeapm/.env}
+      CUBE_AUTH_KEY_SESSION: ${CUBEAPM_SESSION_KEY:?Set a 32-character CUBEAPM_SESSION_KEY}
+      CUBE_AUTH_SYS_ADMINS: ${CUBEAPM_ADMIN_EMAIL:?Set CUBEAPM_ADMIN_EMAIL}
+      CUBE_BASE_URL: http://localhost:3125
+      CUBE_TRACEGEN_DISABLE: "true"
+      CUBE_TRACES_RETENTION: 24h
+      CUBE_METRICS_RETENTION: 24h
+    volumes: ["cubeapm-data:/root/data"]
+  cubeapm-collector:
+    image: otel/opentelemetry-collector-contrib:0.141.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes: ["./cubeapm/collector.yml:/etc/otelcol/config.yaml:ro"]
+    depends_on:
+      cubeapm: {condition: service_started}
+      booking-api: {condition: service_healthy}
+      booking-orchestrator: {condition: service_healthy}
+      payment-simulator: {condition: service_healthy}
+      operator-simulator: {condition: service_healthy}
+volumes:
+  cubeapm-data:

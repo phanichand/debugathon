@@ -7,3 +7,6 @@ out/
 .DS_Store
 .worktrees/
 .superpowers/
+
+# Local CubeAPM credentials
+docker/cubeapm/.env
